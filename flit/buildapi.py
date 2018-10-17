@@ -23,7 +23,7 @@ get_requires_for_build_sdist = get_requires_for_build_wheel
 def prepare_metadata_for_build_wheel(metadata_directory, config_settings=None):
     """Creates {metadata_directory}/foo-1.2.dist-info"""
     ini_info = read_pkg_ini(pyproj_toml)
-    module = Module(ini_info['module'], Path.cwd())
+    module = Module(ini_info['module'], ini_info['module_root'])
     metadata = make_metadata(module, ini_info)
 
     dist_info = Path(metadata_directory,

@@ -83,4 +83,4 @@ def test_requires_extra_env_marker():
 def test_faulty_requires_extra(erroneous, match):
     metadata = {'module': 'mymod', 'author': '', 'author-email': ''}
     with pytest.raises(ConfigError, match=match):
-        _prep_metadata(dict(metadata, **erroneous), None)
+        _prep_metadata(dict(metadata, **erroneous), Path.cwd())

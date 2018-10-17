@@ -23,6 +23,7 @@ metadata_list_fields = {
 
 metadata_allowed_fields = {
     'module',
+    'module_root',
     'author',
     'author-email',
     'maintainer',
@@ -70,7 +71,7 @@ class EntryPointsConflict(ConfigError):
 
 def prep_toml_config(d, path):
     """Validate config loaded from pyproject.toml and prepare common metadata
-    
+
     Returns a dictionary with keys: module, metadata, scripts, entrypoints,
     raw_config.
     """
@@ -87,7 +88,7 @@ def prep_toml_config(d, path):
     if 'metadata' not in d:
         raise ConfigError('[tool.flit.metadata] section is required')
 
-    md_dict, module, reqs_by_extra = _prep_metadata(d['metadata'], path)
+    md_dict, module, module_root, reqs_by_extra = _prep_metadata(d['metadata'], path)
 
     if 'scripts' in d:
         scripts_dict = dict(d['scripts'])
@@ -102,6 +103,7 @@ def prep_toml_config(d, path):
 
     return {
         'module': module,
+        'module_root': module_root,
         'metadata': md_dict,
         'reqs_by_extra': reqs_by_extra,
         'scripts': scripts_dict,
@@ -166,11 +168,11 @@ readme_ext_to_content_type = {
 
 def _prep_metadata(md_sect, path):
     """Process & verify the metadata from a config file
-    
+
     - Pull out the module name we're packaging.
     - Read description-file and check that it's valid rst
     - Convert dashes in key names to underscores
-      (e.g. home-page in config -> home_page in metadata) 
+      (e.g. home-page in config -> home_page in metadata)
     """
     if not set(md_sect).issuperset(metadata_required_fields):
         missing = metadata_required_fields - set(md_sect)
@@ -181,6 +183,12 @@ def _prep_metadata(md_sect, path):
         raise ConfigError("Module name %r is not a valid identifier" % module)
 
     md_dict = {}
+
+    # Module root
+    if 'module_root' in md_sect:
+        module_root = Path(md_sect.get('module_root'))
+    else:
+        module_root = path.parent
 
     # Description file
     if 'description-file' in md_sect:
@@ -214,7 +222,7 @@ def _prep_metadata(md_sect, path):
             project_urls.append("{}, {}".format(label, url))
 
     for key, value in md_sect.items():
-        if key in {'description-file', 'module'}:
+        if key in {'description-file', 'module', 'module_root'}:
             continue
         if key not in metadata_allowed_fields:
             closest = difflib.get_close_matches(key, metadata_allowed_fields,
@@ -281,7 +289,7 @@ def _prep_metadata(md_sect, path):
         set(md_dict.get('provides_extra', [])) | re.keys()
     )
 
-    return md_dict, module, re
+    return md_dict, module, module_root, re
 
 def _expand_requires_extra(re):
     for extra, reqs in re.items():
@@ -294,7 +302,7 @@ def _expand_requires_extra(re):
 
 def _validate_config(cp, path):
     """Validate and process config loaded from a flit.ini file.
-    
+
     Returns a dict with keys: module, metadata, scripts, entrypoints, raw_config
     """
     unknown_sections = set(cp.sections()) - {'metadata', 'scripts'}
@@ -311,6 +319,11 @@ def _validate_config(cp, path):
             md_sect[k] = [l for l in v.splitlines() if l.strip()]
         else:
             md_sect[k] = v
+
+    if 'module_root' in md_sect:
+        module_root = Path([md_sect['module_root']])
+        if not module_root.is_dir():
+            raise FileNotFoundError(module_root)
 
     if 'entry-points-file' in md_sect:
         entry_points_file = path.parent / md_sect.pop('entry-points-file')
@@ -330,7 +343,7 @@ def _validate_config(cp, path):
     else:
         entrypoints = {}
 
-    md_dict, module, reqs_by_extra = _prep_metadata(md_sect, path)
+    md_dict, module, module_root, reqs_by_extra = _prep_metadata(md_sect, path)
 
     # Scripts ---------------
     if cp.has_section('scripts'):
@@ -342,6 +355,7 @@ def _validate_config(cp, path):
 
     return {
         'module': module,
+        'module_root': module_root,
         'metadata': md_dict,
         'reqs_by_extra': reqs_by_extra,
         'scripts': scripts_dict,

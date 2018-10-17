@@ -154,10 +154,11 @@ def clean_tarinfo(ti, mtime=None):
 
 
 class SdistBuilder:
-    def __init__(self, ini_path=Path('flit.ini')):
+    def __init__(self, ini_path=Path('flit.ini'), module_root=Path.cwd()):
         self.ini_path = ini_path
         self.ini_info = inifile.read_pkg_ini(ini_path)
-        self.module = common.Module(self.ini_info['module'], ini_path.parent)
+        self.module = common.Module(self.ini_info['module'],
+                                    self.ini_info['module_root'])
         self.metadata = common.make_metadata(self.module, self.ini_info)
         self.srcdir = ini_path.parent
 

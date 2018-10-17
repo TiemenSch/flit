@@ -50,7 +50,7 @@ class InstallTests(TestCase):
         Installer(samples_dir / 'package1-pkg.ini', pth=True).install()
         assert_isfile(self.tmpdir / 'site-packages' / 'package1.pth')
         with open(str(self.tmpdir / 'site-packages' / 'package1.pth')) as f:
-            assert f.read() == str(samples_dir)
+            assert pathlib.Path(f.read()) == samples_dir
         assert_isfile(self.tmpdir / 'scripts' / 'pkg_script')
 
     def test_dist_name(self):

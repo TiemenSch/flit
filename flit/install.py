@@ -104,7 +104,8 @@ class Installer(object):
             raise DependencyError()
 
         self.ini_info = inifile.read_pkg_ini(ini_path)
-        self.module = common.Module(self.ini_info['module'], ini_path.parent)
+        self.module = common.Module(self.ini_info['module'],
+                                    self.ini_info['module_root'])
 
         if (hasattr(os, 'getuid') and (os.getuid() == 0) and
                 (not os.environ.get('FLIT_ROOT_INSTALL'))):

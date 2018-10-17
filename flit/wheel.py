@@ -43,7 +43,8 @@ class WheelBuilder:
         self.directory = ini_path.parent
 
         self.ini_info = inifile.read_pkg_ini(ini_path)
-        self.module = common.Module(self.ini_info['module'], ini_path.parent)
+        self.module = common.Module(self.ini_info['module'],
+                                    self.ini_info['module_root'])
         self.metadata = common.make_metadata(self.module, self.ini_info)
 
         self.records = []
@@ -94,7 +95,7 @@ class WheelBuilder:
         else:
             # Set timestamps in zipfile for reproducible build
             zinfo = zipfile.ZipInfo(rel_path, self.source_time_stamp)
-        
+
         # Normalize permission bits to either 755 (executable) or 644
         st_mode = os.stat(full_path).st_mode
         new_mode = common.normalize_file_permissions(st_mode)
